@@ -1,0 +1,19 @@
+***REMOVED*** are now loaded from environment variables
+# Create a .env file with the following variables:
+# TWITTER_CONSUMER_KEY=your_consumer_key_here
+# TWITTER_CONSUMER_SECRET=your_consumer_secret_here
+# TWITTER_ACCESS_TOKEN=your_access_token_here
+# TWITTER_ACCESS_TOKEN_SECRET=your_access_token_secret_here
+
+***REMOVED*** for notifications (optional)
+# DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN (for errors)
+# DISCORD_SUCCESS_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_SUCCESS_WEBHOOK_ID/YOUR_SUCCESS_WEBHOOK_TOKEN (for successes)
+
+[settings]
+cache_location = ./cache/
+tweet_time = 15:00
+timezone = Asia/Kolkata
+
+[logging]
+log_level = INFO
+log_file = f1_countdown_bot.log 

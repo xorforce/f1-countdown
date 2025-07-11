@@ -1,0 +1,27 @@
+# Copy this content to a new file named '.env' in your project root
+# Replace the placeholder values with your actual credentials
+# Requires Python 3.13+ for compatibility
+
+***REMOVED***
+TWITTER_CONSUMER_KEY=your_consumer_key_here
+TWITTER_CONSUMER_SECRET=your_consumer_secret_here
+TWITTER_ACCESS_TOKEN=your_access_token_here
+TWITTER_ACCESS_TOKEN_SECRET=your_access_token_secret_here
+
+***REMOVED*** (optional)
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
+DISCORD_SUCCESS_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_SUCCESS_WEBHOOK_ID/YOUR_SUCCESS_WEBHOOK_TOKEN
+
+# Get Twitter credentials from https://developer.twitter.com/
+# 1. Create a Twitter Developer Account
+# 2. Create a new app 
+# 3. Generate API keys and tokens
+# 4. Set app permissions to "Read and Write"
+
+# Get Discord webhook URLs from your Discord server:
+# 1. Go to your Discord server
+# 2. Right-click on a channel → Edit Channel
+# 3. Go to Integrations → Webhooks
+# 4. Create New Webhook or use existing one
+# 5. Copy the webhook URL
+# Note: You can use the same webhook for both, or create separate ones for errors and successes 
