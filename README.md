@@ -257,31 +257,6 @@ F1 Race Countdown: Hungarian Grand Prix
 #F1 #Formula1 #Countdown
 ```
 
-## Monitoring
-
-### Regular Checks
-```bash
-# Check bot status
-python f1_countdown_bot.py --debug
-
-# View logs
-tail -50 f1_countdown_bot.log
-
-# Test Discord notifications
-python test_discord.py
-```
-
-### Environment Validation
-```bash
-# Check environment variables
-python -c "
-import os
-from dotenv import load_dotenv
-load_dotenv()
-required = ['TWITTER_CONSUMER_KEY', 'TWITTER_CONSUMER_SECRET', 'TWITTER_ACCESS_TOKEN', 'TWITTER_ACCESS_TOKEN_SECRET']
-for var in required:
-    print(f'{var}: {\"✅ Set\" if os.getenv(var) else \"❌ Missing\"}')"
-```
 
 ## Error Handling
 
