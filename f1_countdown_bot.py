@@ -92,14 +92,15 @@ class F1CountdownBot:
         )
         return config
 
-    def _setup_twitter_api(self) -> tweepy.API:
-        """Set up Twitter API connection using environment variables."""
+    def _setup_twitter_api(self) -> tweepy.Client:
+        """Set up Twitter API v2 connection using environment variables."""
         try:
             # Get Twitter API credentials from environment variables
             consumer_key = os.getenv('TWITTER_CONSUMER_KEY')
             consumer_secret = os.getenv('TWITTER_CONSUMER_SECRET')
             access_token = os.getenv('TWITTER_ACCESS_TOKEN')
             access_token_secret = os.getenv('TWITTER_ACCESS_TOKEN_SECRET')
+            bearer_token = os.getenv('TWITTER_BEARER_TOKEN')
 
             # Check if all required environment variables are set
             if not all([consumer_key, consumer_secret, access_token, access_token_secret]):
@@ -117,17 +118,27 @@ class F1CountdownBot:
                 logger.error("Please set these variables in your .env file or environment")
                 sys.exit(1)
 
-            auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-            auth.set_access_token(access_token, access_token_secret)
-
-            api = tweepy.API(auth, wait_on_rate_limit=True)
-
-            # Verify credentials
-            api.verify_credentials()
-            logger.info(
-                "Twitter API authenticated successfully using environment variables"
+            # Use Twitter API v2 Client
+            client = tweepy.Client(
+                bearer_token=bearer_token,
+                consumer_key=consumer_key,
+                consumer_secret=consumer_secret,
+                access_token=access_token,
+                access_token_secret=access_token_secret,
+                wait_on_rate_limit=True
             )
-            return api
+
+            # Verify credentials by getting user info
+            try:
+                me = client.get_me()
+                logger.info(
+                    f"Twitter API v2 authenticated successfully as @{me.data.username} using environment variables"
+                )
+            except Exception as e:
+                logger.warning(f"Could not verify Twitter credentials: {e}")
+                logger.info("Twitter API v2 client created (credentials not verified)")
+
+            return client
 
         except Exception as e:
             logger.critical(f"Failed to authenticate with Twitter API: {e}")
@@ -287,15 +298,15 @@ class F1CountdownBot:
         return f"The {year} F1 season has concluded! Waiting for the {year + 1} calendar to be announced. #F1"
 
     def _post_tweet(self, tweet_content: str, race_info: dict = None) -> bool:
-        """Post tweet to Twitter using Tweepy API."""
+        """Post tweet to Twitter using Twitter API v2."""
         if self.debug_mode:
             print("[DEBUG] Would post tweet (not actually posting in debug mode):")
             print(tweet_content)
             return True
         try:
-            logger.info("[API REQUEST] POST https://api.twitter.com/1.1/statuses/update.json (Posting tweet via Tweepy)")
-            self.twitter_api.update_status(tweet_content)
-            logger.info("Tweet posted successfully.")
+            logger.info("[API REQUEST] POST https://api.twitter.com/2/tweets (Posting tweet via Twitter API v2)")
+            response = self.twitter_api.create_tweet(text=tweet_content)
+            logger.info(f"Tweet posted successfully. Tweet ID: {response.data['id']}")
             if race_info:
                 self._send_success_notification(tweet_content, race_info)
             return True
