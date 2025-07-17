@@ -287,166 +287,97 @@ class F1CountdownBot:
         return f"The {year} F1 season has concluded! Waiting for the {year + 1} calendar to be announced. #F1"
 
     def _post_tweet(self, tweet_content: str, race_info: dict = None) -> bool:
-        """Post tweet to Twitter."""
-        # Always print the tweet content to console for debugging
-        print("\n" + "="*60)
-        print("TWEET CONTENT:")
-        print("="*60)
-        print(tweet_content)
-        print("="*60)
-        print(f"Tweet length: {len(tweet_content)} characters")
-        print("="*60 + "\n")
-
-        # In debug mode, just simulate posting
+        """Post tweet to Twitter using Tweepy API."""
         if self.debug_mode:
-            logger.info(f"DEBUG: Would post tweet: {tweet_content[:50]}...")
-            print("🔧 DEBUG MODE: Tweet not actually posted to Twitter")
-
-            # Send success notification even in debug mode to test
-            self._send_success_notification(tweet_content, race_info)
+            print("[DEBUG] Would post tweet (not actually posting in debug mode):")
+            print(tweet_content)
             return True
-
-        # Normal mode: actually post to Twitter
         try:
+            logger.info("[API REQUEST] POST https://api.twitter.com/1.1/statuses/update.json (Posting tweet via Tweepy)")
             self.twitter_api.update_status(tweet_content)
-            logger.info(f"Successfully posted tweet: {tweet_content[:50]}...")
-            print("✅ Tweet posted successfully to Twitter!")
-
-            # Send success notification to Discord
-            self._send_success_notification(tweet_content, race_info)
-
+            logger.info("Tweet posted successfully.")
+            if race_info:
+                self._send_success_notification(tweet_content, race_info)
             return True
         except Exception as e:
             logger.error(f"Failed to post tweet: {e}")
-            print(f"❌ Failed to post tweet to Twitter: {e}")
+            self._send_discord_notification(
+                title="Tweet Failed",
+                message=f"Failed to post tweet: {e}",
+                error_type="TWEET_POST_ERROR"
+            )
             return False
 
     def _send_discord_notification(self, title: str, message: str, error_type: str = "ERROR") -> bool:
         """Send error notification to Discord webhook."""
-        discord_webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
-
-        if not discord_webhook_url:
-            logger.warning("Discord webhook URL not configured - skipping Discord notification")
+        webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
+        if not webhook_url:
+            logger.warning("Discord webhook URL not set. Skipping Discord notification.")
             return False
-
         try:
-            current_time = datetime.now(self.timezone).strftime('%Y-%m-%d %H:%M:%S %Z')
-
-            # Create Discord embed
-            embed = {
-                "title": f"🚨 F1 Countdown Bot - {title}",
-                "description": message,
-                "color": 15158332,  # Red color
-                "fields": [
-                    {
-                        "name": "Error Type",
-                        "value": error_type,
-                        "inline": True
-                    },
-                    {
-                        "name": "Timestamp",
-                        "value": current_time,
-                        "inline": True
-                    }
-                ],
-                "footer": {
-                    "text": "F1 Countdown Bot Error Alert"
-                }
-            }
-
+            logger.info(f"[API REQUEST] POST {webhook_url} (Sending error notification to Discord)")
+            import requests
             payload = {
-                "content": f"@here F1 Bot encountered an error!",
-                "embeds": [embed]
+                "content": f"@here {title}",
+                "embeds": [
+                    {
+                        "title": title,
+                        "description": message,
+                        "color": 15158332 if error_type == "ERROR" else 5763719,
+                        "fields": [
+                            {"name": "Type", "value": error_type, "inline": True},
+                            {"name": "Timestamp", "value": datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "inline": True}
+                        ],
+                        "footer": {"text": "F1 Countdown Bot Notification"}
+                    }
+                ]
             }
-
-            response = requests.post(discord_webhook_url, json=payload, timeout=10)
-
+            response = requests.post(webhook_url, json=payload, timeout=10)
             if response.status_code == 204:
-                logger.info("Discord notification sent successfully")
-                print("📢 Discord notification sent successfully!")
+                logger.info("Discord error notification sent successfully.")
                 return True
             else:
-                logger.error(f"Failed to send Discord notification: {response.status_code}")
-                print(f"❌ Failed to send Discord notification: {response.status_code}")
+                logger.error(f"Failed to send Discord notification: {response.status_code} {response.text}")
                 return False
-
         except Exception as e:
-            logger.error(f"Error sending Discord notification: {e}")
-            print(f"❌ Error sending Discord notification: {e}")
+            logger.error(f"Exception sending Discord notification: {e}")
             return False
 
     def _send_success_notification(self, tweet_content: str, race_info: dict = None) -> bool:
-        """Send successful tweet notification to Discord webhook."""
-        discord_success_webhook_url = os.getenv('DISCORD_SUCCESS_WEBHOOK_URL')
-
-        if not discord_success_webhook_url:
-            logger.info("Discord success webhook URL not configured - skipping success notification")
+        """Send success notification to Discord webhook."""
+        webhook_url = os.getenv("DISCORD_SUCCESS_WEBHOOK_URL")
+        if not webhook_url:
+            logger.info("Discord success webhook URL not set. Skipping success notification.")
             return False
-
         try:
-            current_time = datetime.now(self.timezone).strftime('%Y-%m-%d %H:%M:%S %Z')
-
-            # Create Discord embed for success
-            embed = {
-                "title": "✅ F1 Countdown Bot - Tweet Posted Successfully",
-                "description": f"**Tweet Content:**\n```\n{tweet_content}\n```",
-                "color": 5763719,  # Green color
-                "fields": [
-                    {
-                        "name": "Status",
-                        "value": "SUCCESS",
-                        "inline": True
-                    },
-                    {
-                        "name": "Timestamp",
-                        "value": current_time,
-                        "inline": True
-                    }
-                ],
-                "footer": {
-                    "text": "F1 Countdown Bot Success Alert"
-                }
-            }
-
-            # Add race information if provided
-            if race_info:
-                embed["fields"].extend([
-                    {
-                        "name": "Next Race",
-                        "value": race_info.get("next_race", "Unknown"),
-                        "inline": True
-                    },
-                    {
-                        "name": "Progress Made",
-                        "value": f"{race_info.get('progress_made', 0):.2f}%",
-                        "inline": True
-                    },
-                    {
-                        "name": "Days Left",
-                        "value": f"{race_info.get('race_left', 0):.2f}%",
-                        "inline": True
-                    }
-                ])
-
+            logger.info(f"[API REQUEST] POST {webhook_url} (Sending success notification to Discord)")
+            import requests
             payload = {
-                "content": "🏁 F1 Bot posted a new countdown tweet!",
-                "embeds": [embed]
+                "content": "✅ Tweet posted successfully!",
+                "embeds": [
+                    {
+                        "title": "F1 Countdown Tweet Posted",
+                        "description": tweet_content,
+                        "color": 5763719,
+                        "fields": [
+                            {"name": "Next Race", "value": race_info.get("next_race", "N/A"), "inline": True},
+                            {"name": "Progress Made", "value": f"{race_info.get('progress_made', 0):.2f}%", "inline": True},
+                            {"name": "Race Left", "value": f"{race_info.get('race_left', 0):.2f}%", "inline": True},
+                            {"name": "Timestamp", "value": datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "inline": True}
+                        ],
+                        "footer": {"text": "F1 Countdown Bot Notification"}
+                    }
+                ]
             }
-
-            response = requests.post(discord_success_webhook_url, json=payload, timeout=10)
-
+            response = requests.post(webhook_url, json=payload, timeout=10)
             if response.status_code == 204:
-                logger.info("Discord success notification sent successfully")
-                print("📢 Discord success notification sent!")
+                logger.info("Discord success notification sent successfully.")
                 return True
             else:
-                logger.error(f"Failed to send Discord success notification: {response.status_code}")
-                print(f"❌ Failed to send Discord success notification: {response.status_code}")
+                logger.error(f"Failed to send Discord success notification: {response.status_code} {response.text}")
                 return False
-
         except Exception as e:
-            logger.error(f"Error sending Discord success notification: {e}")
-            print(f"❌ Error sending Discord success notification: {e}")
+            logger.error(f"Exception sending Discord success notification: {e}")
             return False
 
     def daily_tweet_generation(self):
