@@ -12,15 +12,7 @@ This bot automatically posts tweets at 3:00 PM IST daily, displaying:
 
 The bot uses official F1 data from the FastF1 library and includes robust error handling with Fibonacci retry intervals for data fetch failures.
 
-## Security
 
-This repository is designed with security in mind:
-- ✅ **No hardcoded credentials** - All API keys are stored in environment variables
-- ✅ **Template-based configuration** - Users must provide their own credentials
-- ✅ **Secure .gitignore** - Prevents accidental commit of sensitive files
-- ✅ **Interactive setup** - Prompts users to input their own webhook URLs
-
-**Important**: Never commit your `.env` file or `config.ini` file to version control. These files contain sensitive API credentials.
 
 ## Features
 
