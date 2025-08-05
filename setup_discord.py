@@ -1,21 +1,33 @@
 #!/usr/bin/env python3.13
 """
 Helper script to set up Discord webhook URLs in .env file.
-This script sets up the webhooks with the provided URLs.
+This script prompts users to input their own Discord webhook URLs.
 """
 
 import os
 from pathlib import Path
 
-***REMOVED***
-ERROR_WEBHOOK_URL = (
-    "https://discord.com/api/webhooks/1393343102642684005/"
-    "WJ4VLmQJlwKgV4gEFygYSDIMf-GdIJqsA5O4OhzPbpwrOoYC4alyMHTx-3H3_LPc0T_7"
-)
-SUCCESS_WEBHOOK_URL = (
-    "https://discord.com/api/webhooks/1393347157171507350/"
-    "2hSms-MqF2_yzpnNhEbFJbFse6JP2-TpsTV0h0ywDGgAjUwaXa9iiwTVzroBQ_WgF4zC"
-)
+def get_webhook_url(webhook_type: str) -> str:
+    """Prompt user for webhook URL."""
+    print(f"\n📝 {webhook_type} Webhook Setup:")
+    print(f"1. Go to your Discord server")
+    print(f"2. Right-click on a channel → Edit Channel")
+    print(f"3. Go to Integrations → Webhooks")
+    print(f"4. Create New Webhook or use existing one")
+    print(f"5. Copy the webhook URL")
+    
+    while True:
+        webhook_url = input(f"\nEnter your {webhook_type.lower()} webhook URL (or press Enter to skip): ").strip()
+        
+        if not webhook_url:
+            print(f"⏭️  Skipping {webhook_type.lower()} webhook setup")
+            return ""
+        
+        if webhook_url.startswith("https://discord.com/api/webhooks/"):
+            return webhook_url
+        else:
+            print("❌ Invalid webhook URL format. Please enter a valid Discord webhook URL.")
+            print("Example: https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN")
 
 def setup_discord_webhooks():
     """Set up Discord webhook URLs in .env file."""
@@ -34,25 +46,35 @@ def setup_discord_webhooks():
     discord_webhook_set = False
     discord_success_webhook_set = False
 
+    # Get webhook URLs from user
+    error_webhook_url = get_webhook_url("Error")
+    success_webhook_url = get_webhook_url("Success")
+
     for line in lines:
         if line.startswith('DISCORD_WEBHOOK_URL='):
-            new_lines.append(f'DISCORD_WEBHOOK_URL={ERROR_WEBHOOK_URL}')
-            discord_webhook_set = True
-            print("✅ Updated DISCORD_WEBHOOK_URL for error notifications")
+            if error_webhook_url:
+                new_lines.append(f'DISCORD_WEBHOOK_URL={error_webhook_url}')
+                discord_webhook_set = True
+                print("✅ Updated DISCORD_WEBHOOK_URL for error notifications")
+            else:
+                new_lines.append(line)  # Keep existing if user skipped
         elif line.startswith('DISCORD_SUCCESS_WEBHOOK_URL='):
-            new_lines.append(f'DISCORD_SUCCESS_WEBHOOK_URL={SUCCESS_WEBHOOK_URL}')
-            discord_success_webhook_set = True
-            print("✅ Updated DISCORD_SUCCESS_WEBHOOK_URL for success notifications")
+            if success_webhook_url:
+                new_lines.append(f'DISCORD_SUCCESS_WEBHOOK_URL={success_webhook_url}')
+                discord_success_webhook_set = True
+                print("✅ Updated DISCORD_SUCCESS_WEBHOOK_URL for success notifications")
+            else:
+                new_lines.append(line)  # Keep existing if user skipped
         else:
             new_lines.append(line)
 
-    # Add webhook URLs if they weren't found
-    if not discord_webhook_set:
-        new_lines.append(f'DISCORD_WEBHOOK_URL={ERROR_WEBHOOK_URL}')
+    # Add webhook URLs if they weren't found and user provided them
+    if not discord_webhook_set and error_webhook_url:
+        new_lines.append(f'DISCORD_WEBHOOK_URL={error_webhook_url}')
         print("✅ Added DISCORD_WEBHOOK_URL for error notifications")
 
-    if not discord_success_webhook_set:
-        new_lines.append(f'DISCORD_SUCCESS_WEBHOOK_URL={SUCCESS_WEBHOOK_URL}')
+    if not discord_success_webhook_set and success_webhook_url:
+        new_lines.append(f'DISCORD_SUCCESS_WEBHOOK_URL={success_webhook_url}')
         print("✅ Added DISCORD_SUCCESS_WEBHOOK_URL for success notifications")
 
     # Write back to .env file
@@ -60,9 +82,15 @@ def setup_discord_webhooks():
         f.write('\n'.join(new_lines))
 
     print(f"\n🎉 Discord webhooks configured in {env_file}")
-    print("\nConfigured webhooks:")
-    print("  • Error notifications → Incoming Failures channel")
-    print("  • Success notifications → Incoming Tweets channel")
+    
+    if error_webhook_url or success_webhook_url:
+        print("\nConfigured webhooks:")
+        if error_webhook_url:
+            print("  • Error notifications → Your Discord channel")
+        if success_webhook_url:
+            print("  • Success notifications → Your Discord channel")
+    else:
+        print("\nℹ️  No webhooks configured. Discord notifications will be disabled.")
 
     return True
 
