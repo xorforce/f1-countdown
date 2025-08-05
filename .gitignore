@@ -2,6 +2,14 @@
 .env
 config.ini
 
+# Cleanup and security scripts
+filter_sensitive_data.py
+sensitive_patterns.txt
+GITHUB_CLEANUP.md
+cleanup_*.py
+security_*.py
+backup_*/
+
 # Python
 __pycache__/
 *.py[cod]
